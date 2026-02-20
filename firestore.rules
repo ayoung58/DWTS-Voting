@@ -1,0 +1,31 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /competitions/{competitionId} {
+      allow read: if true;
+      allow write: if true; // For testing - will secure later
+
+      match /couples/{coupleId} {
+        allow read: if true;
+        allow write: if true;
+      }
+
+      match /votes/{voteId} {
+        allow read: if true;
+        allow create: if true;
+        allow update: if true;   // Allow auto-saving vote updates
+        allow delete: if true;   // Allows clearing votes for testing
+      }
+
+      match /judgeScores/{judgeScoreId} {
+        allow read: if true;
+        allow write: if true;
+      }
+
+      match /status/{statusId} {
+        allow read: if true;
+        allow write: if true;
+      }
+    }
+  }
+}

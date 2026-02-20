@@ -1,0 +1,23 @@
+{
+  "name": "dwts-voting",
+  "version": "1.0.0",
+  "description": "Dancing with the UBC Dance Club Stars - Voting System",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "firebase:deploy": "npm run build && firebase deploy"
+  },
+  "dependencies": {
+    "firebase": "^10.7.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.6",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.10"
+  }
+}

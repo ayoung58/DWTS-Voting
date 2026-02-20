@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard - DWTS Voting System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Montserrat:wght@300;400;600&display=swap"
+      rel="stylesheet"
+    />
+    <script type="module" crossorigin src="/assets/admin-RgC95FdQ.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/utils-Deyof8SY.js">
+    <link rel="stylesheet" crossorigin href="/assets/utils-C7Ppdrqe.css">
+  </head>
+  <body class="gradient-bg min-h-screen text-white font-body">
+    <div class="bg-black/30 py-6 text-center border-b-4 border-gold-bright">
+      <h1 class="text-gold-bright font-display text-4xl md:text-5xl mb-2">
+        🪩 Admin Dashboard - Dancing With The (UBC Dance Club) Stars 🪩
+      </h1>
+      <p class="text-lg">Competition Management System</p>
+    </div>
+
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+      <div class="flex flex-wrap gap-3 mb-8">
+        <button
+          class="px-6 py-3 bg-gold-bright text-purple-dark font-bold rounded-lg border-2 border-gold-bright transition-all hover:scale-105 active"
+          data-tab="dashboard"
+          onclick="showTab('dashboard')"
+        >
+          Dashboard
+        </button>
+        <button
+          class="px-6 py-3 bg-white/10 text-white rounded-lg border-2 border-gold-bright transition-all hover:bg-white/20"
+          data-tab="couples"
+          onclick="showTab('couples')"
+        >
+          Manage Couples
+        </button>
+        <button
+          class="px-6 py-3 bg-white/10 text-white rounded-lg border-2 border-gold-bright transition-all hover:bg-white/20"
+          data-tab="judges"
+          onclick="showTab('judges')"
+        >
+          Judge Scores
+        </button>
+        <button
+          class="px-6 py-3 bg-white/10 text-white rounded-lg border-2 border-gold-bright transition-all hover:bg-white/20"
+          data-tab="control"
+          onclick="showTab('control')"
+        >
+          Control Panel
+        </button>
+        <button
+          class="px-6 py-3 bg-white/10 text-white rounded-lg border-2 border-gold-bright transition-all hover:bg-white/20"
+          data-tab="presentation"
+          onclick="showTab('presentation')"
+        >
+          Presentation Mode
+        </button>
+      </div>
+
+      <div data-tab-content="dashboard" class="card min-h-96">
+        <h2 class="text-gold-bright text-3xl font-bold mb-6">📊 Dashboard</h2>
+
+        <!-- Stats Summary -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div class="bg-white/10 rounded-lg p-6 border border-gold-bright/30">
+            <div class="text-white/70 text-sm mb-1">Total Votes</div>
+            <div id="totalVotes" class="text-4xl font-bold text-gold-bright">
+              0
+            </div>
+          </div>
+          <div class="bg-white/10 rounded-lg p-6 border border-gold-bright/30">
+            <div class="text-white/70 text-sm mb-1">Unique Voters</div>
+            <div id="uniqueVoters" class="text-4xl font-bold text-gold-bright">
+              0
+            </div>
+          </div>
+          <div class="bg-white/10 rounded-lg p-6 border border-gold-bright/30">
+            <div class="text-white/70 text-sm mb-1">Couples</div>
+            <div id="totalCouples" class="text-4xl font-bold text-gold-bright">
+              0
+            </div>
+          </div>
+        </div>
+
+        <!-- Votes Per Couple -->
+        <div class="mb-8">
+          <h3 class="text-xl font-semibold mb-4">Votes Per Couple</h3>
+          <div id="votesPerCouple" class="space-y-3">
+            <!-- Vote counts will be shown here -->
+          </div>
+        </div>
+
+        <!-- Recent Voters -->
+        <div>
+          <h3 class="text-xl font-semibold mb-4">Recent Voters</h3>
+          <div id="recentVoters" class="space-y-2">
+            <!-- Recent voters will be shown here -->
+          </div>
+        </div>
+      </div>
+
+      <div data-tab-content="couples" class="card min-h-96 hidden">
+        <h2 class="text-gold-bright text-3xl font-bold mb-6">
+          💑 Manage Couples
+        </h2>
+
+        <!-- Add Couple Form -->
+        <div class="bg-white/5 rounded-lg p-6 mb-8">
+          <h3 class="text-xl font-semibold mb-4">Add New Couple</h3>
+          <form id="addCoupleForm" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium mb-2"
+                  >Pro Name <span class="text-red-400">*</span></label
+                >
+                <input
+                  type="text"
+                  id="leadName"
+                  required
+                  class="w-full px-4 py-2 bg-white/10 border border-gold-bright/30 rounded-lg focus:outline-none focus:border-gold-bright text-white"
+                  placeholder="e.g., Sarah"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-2"
+                  >Star Name <span class="text-red-400">*</span></label
+                >
+                <input
+                  type="text"
+                  id="followName"
+                  required
+                  class="w-full px-4 py-2 bg-white/10 border border-gold-bright/30 rounded-lg focus:outline-none focus:border-gold-bright text-white"
+                  placeholder="e.g., Michael"
+                />
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium mb-2">Pro Photo</label>
+                <input
+                  type="file"
+                  id="leadPhoto"
+                  accept="image/*"
+                  class="w-full px-4 py-2 bg-white/10 border border-gold-bright/30 rounded-lg focus:outline-none focus:border-gold-bright text-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-gold-bright file:text-purple-dark file:cursor-pointer"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-2">Star Photo</label>
+                <input
+                  type="file"
+                  id="followPhoto"
+                  accept="image/*"
+                  class="w-full px-4 py-2 bg-white/10 border border-gold-bright/30 rounded-lg focus:outline-none focus:border-gold-bright text-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-gold-bright file:text-purple-dark file:cursor-pointer"
+                />
+                <p class="text-xs text-white/70 mt-1">
+                  Images will be compressed to &lt;100KB each
+                </p>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium mb-2"
+                  >Music (optional)</label
+                >
+                <input
+                  type="text"
+                  id="coupleMusic"
+                  class="w-full px-4 py-2 bg-white/10 border border-gold-bright/30 rounded-lg focus:outline-none focus:border-gold-bright text-white"
+                  placeholder="e.g., Shape of You"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-2"
+                  >Dance (optional)</label
+                >
+                <input
+                  type="text"
+                  id="coupleDance"
+                  class="w-full px-4 py-2 bg-white/10 border border-gold-bright/30 rounded-lg focus:outline-none focus:border-gold-bright text-white"
+                  placeholder="e.g., Cha Cha"
+                />
+              </div>
+            </div>
+            <button type="submit" class="btn-primary w-full">Add Couple</button>
+          </form>
+        </div>
+
+        <!-- Couples List -->
+        <div>
+          <h3 class="text-xl font-semibold mb-4">Current Couples</h3>
+          <div
+            id="couplesList"
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+          >
+            <!-- Couples will be loaded here -->
+          </div>
+        </div>
+      </div>
+
+      <div data-tab-content="judges" class="card min-h-96 hidden">
+        <h2 class="text-gold-bright text-3xl font-bold mb-6">
+          ⭐ Judge Scores
+        </h2>
+
+        <!-- Scoring Mode Toggle -->
+        <div class="bg-white/5 rounded-lg p-6 mb-8">
+          <h3 class="text-xl font-semibold mb-4">Scoring Mode</h3>
+          <div class="flex gap-4">
+            <button
+              id="individualModeBtn"
+              onclick="setScoringMode('individual')"
+              class="px-6 py-3 bg-gold-bright text-purple-dark font-semibold rounded-lg"
+            >
+              Individual Judges (6 scores)
+            </button>
+            <button
+              id="quickModeBtn"
+              onclick="setScoringMode('quick')"
+              class="px-6 py-3 bg-white/10 text-white rounded-lg border border-gold-bright/30"
+            >
+              Quick Entry (1 combined score)
+            </button>
+          </div>
+        </div>
+
+        <!-- Couples Scoring List -->
+        <div id="judgeScoresList" class="space-y-4">
+          <!-- Couples with scoring inputs will be loaded here -->
+        </div>
+      </div>
+
+      <div data-tab-content="control" class="card min-h-96 hidden">
+        <h2 class="text-gold-bright text-3xl font-bold mb-6">
+          🎮 Control Panel
+        </h2>
+
+        <!-- Voting Status Display -->
+        <div class="bg-white/5 rounded-lg p-6 mb-6">
+          <h3 class="text-xl font-semibold mb-4">Voting Status</h3>
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-lg mb-2">Current Status:</p>
+              <p id="votingStatusDisplay" class="text-3xl font-bold">
+                <span id="statusText" class="text-gold-bright">Loading...</span>
+              </p>
+            </div>
+            <div
+              id="statusIndicator"
+              class="w-20 h-20 rounded-full flex items-center justify-center text-4xl bg-white/10"
+            >
+              ⏳
+            </div>
+          </div>
+        </div>
+
+        <!-- Control Buttons -->
+        <div class="bg-white/5 rounded-lg p-6 mb-6">
+          <h3 class="text-xl font-semibold mb-4">Voting Controls</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <button
+              id="openVotingBtn"
+              onclick="setVotingStatus('open')"
+              class="bg-gradient-to-r from-green-600 to-green-500 text-white font-bold py-4 px-6 rounded-lg hover:from-green-700 hover:to-green-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              ✅ Open Voting
+            </button>
+            <button
+              id="closeVotingBtn"
+              onclick="setVotingStatus('closed')"
+              class="bg-gradient-to-r from-red-600 to-red-500 text-white font-bold py-4 px-6 rounded-lg hover:from-red-700 hover:to-red-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              ⛔ Close Voting
+            </button>
+          </div>
+          <p class="text-sm text-white/70 mt-4 text-center">
+            When voting is closed, audience members will see a "Voting Closed"
+            message
+          </p>
+        </div>
+
+        <!-- Max Hearts Limit -->
+        <div class="bg-white/5 rounded-lg p-6 mb-6">
+          <h3 class="text-xl font-semibold mb-4">❤️ Maximum Hearts Limit</h3>
+          <p class="text-sm text-white/70 mb-4">
+            Set the maximum number of hearts (votes) each audience member can
+            give. Leave empty for unlimited.
+          </p>
+          <div class="flex gap-3">
+            <input
+              type="number"
+              id="maxHeartsInput"
+              min="1"
+              placeholder="Unlimited"
+              class="flex-1 px-4 py-3 bg-white/10 border border-gold-bright/30 rounded-lg focus:outline-none focus:border-gold-bright text-white text-lg"
+            />
+            <button
+              onclick="setMaxHearts()"
+              class="px-6 py-3 bg-gold-bright text-purple-dark font-bold rounded-lg hover:bg-gold-dark transition-all"
+            >
+              Save
+            </button>
+          </div>
+          <p class="text-sm text-white/70 mt-3">
+            Current limit:
+            <span id="currentMaxHearts" class="text-gold-bright font-semibold"
+              >Loading...</span
+            >
+          </p>
+        </div>
+
+        <!-- Testing & Data Management -->
+        <div class="bg-white/5 rounded-lg p-6 mb-6">
+          <h3 class="text-xl font-semibold mb-4">
+            ⚠️ Testing & Data Management
+          </h3>
+          <button
+            onclick="clearAllVotes()"
+            class="w-full bg-gradient-to-r from-orange-600 to-orange-500 text-white font-bold py-4 px-6 rounded-lg hover:from-orange-700 hover:to-orange-600 transition-all"
+          >
+            🗑️ Clear All Votes
+          </button>
+          <p class="text-sm text-white/70 mt-3 text-center">
+            ⚠️ This will permanently delete all votes from the database. Use for
+            testing only.
+          </p>
+        </div>
+
+        <!-- Instructions -->
+        <div
+          class="bg-purple-medium/20 rounded-lg p-6 border border-purple-medium/50"
+        >
+          <h3 class="text-lg font-semibold mb-3">📋 Event Day Instructions</h3>
+          <ol class="space-y-2 text-sm">
+            <li>
+              <strong>Before First Performance:</strong> Click "Open Voting" and
+              announce the voting URL to audience
+            </li>
+            <li>
+              <strong>During Performances:</strong> Monitor the Dashboard tab to
+              see votes coming in real-time
+            </li>
+            <li>
+              <strong>After Last Performance:</strong> Wait 2-3 minutes for
+              final votes, then click "Close Voting"
+            </li>
+            <li>
+              <strong>Grand Reveal:</strong> Switch to Presentation Mode tab and
+              reveal results on the big screen
+            </li>
+          </ol>
+        </div>
+      </div>
+
+      <div data-tab-content="presentation" class="hidden">
+        <!-- Presentation Mode - Full Screen -->
+        <div
+          class="fixed inset-0 bg-purple-dark/95 z-50 overflow-y-auto hidden"
+          id="presentationFullscreen"
+        >
+          <!-- Header -->
+          <div
+            class="text-center py-8 border-b-4 border-gold-bright bg-black/30"
+          >
+            <h1 class="text-gold-bright font-display text-5xl md:text-6xl mb-2">
+              🪩 Dancing With The (UBC Dance Club) Stars 🪩
+            </h1>
+            <p class="text-2xl text-white/90">Results</p>
+          </div>
+
+          <!-- Podium Area (main content) -->
+          <div id="barChartArea" class="container mx-auto px-8 py-12">
+            <div id="barChartContainer" class="space-y-6">
+              <!-- Podium will be generated here by JS -->
+            </div>
+          </div>
+
+          <!-- Exit Fullscreen Button -->
+          <button
+            id="exitFullscreen"
+            class="fixed top-4 right-4 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
+          >
+            Exit Presentation
+          </button>
+        </div>
+
+        <!-- Control Panel (when not in fullscreen) -->
+        <div class="card">
+          <h2 class="text-gold-bright text-3xl font-bold mb-6">
+            🎬 Presentation Mode
+          </h2>
+
+          <div class="space-y-6">
+            <!-- Enter Fullscreen -->
+            <div class="bg-white/5 rounded-lg p-6">
+              <button
+                id="enterFullscreen"
+                class="btn-primary w-full text-xl py-4"
+              >
+                Enter Presentation Mode (Fullscreen)
+              </button>
+              <p class="text-sm text-white/70 mt-2 text-center">
+                Best viewed on a projector or large screen
+              </p>
+            </div>
+
+            <!-- Reveal Controls -->
+            <div class="bg-white/5 rounded-lg p-6">
+              <h3 class="text-xl font-semibold mb-4">Reveal Controls</h3>
+              <div id="revealControlsList" class="space-y-3">
+                <!-- Reveal buttons for 3rd, 2nd, 1st will be generated here -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confetti library for presentation mode -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  </body>
+</html>

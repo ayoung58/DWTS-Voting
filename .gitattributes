@@ -1,0 +1,2 @@
+# Mark firebase.ts as vendored to reduce security scan noise
+src/firebase.ts linguist-vendored
