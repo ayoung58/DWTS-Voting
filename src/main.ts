@@ -95,69 +95,6 @@ function startVotingStatusListener() {
   });
 }
 
-function updateSubmitButtonState() {
-  const submitBtn = document.getElementById(
-    "submitVotesBtn",
-  ) as HTMLButtonElement;
-  const helpText = document.getElementById("submitHelpText");
-
-  if (!submitBtn) return;
-
-  if (submissionStatus === "open") {
-    submitBtn.disabled = false;
-    submitBtn.classList.remove("opacity-50", "cursor-not-allowed");
-    submitBtn.textContent = "Submit All Votes";
-    if (helpText) {
-      helpText.textContent = "Click to submit your votes when ready";
-    }
-  } else {
-    submitBtn.disabled = true;
-    submitBtn.classList.add("opacity-50", "cursor-not-allowed");
-    submitBtn.textContent = "Submissions will open after all dances";
-    if (helpText) {
-      helpText.textContent =
-        "The submit button will be enabled after all dances are finished";
-    }
-  }
-}
-
-function startVoteDocumentListener() {
-  if (!userFingerprint) return;
-
-  const voteDocRef = doc(
-    db,
-    `competitions/${COMPETITION_ID}/votes`,
-    userFingerprint,
-  );
-
-  onSnapshot(voteDocRef, (docSnapshot) => {
-    if (docSnapshot.exists()) {
-      const data = docSnapshot.data();
-
-      // If the vote was just submitted (by user or auto-submitted by admin)
-      if (data.submitted) {
-        const voteCount = Object.keys(data.votes || {}).length;
-        const statusMessage = document.getElementById("statusMessage");
-        const votingForm = document.getElementById("votingForm");
-
-        if (statusMessage) {
-          statusMessage.innerHTML = `
-            <div class="card text-center py-8 bg-green-500/20 border-green-500/50">
-              <h2 class="text-3xl font-bold text-green-400 mb-2">✅ Votes Submitted!</h2>
-              <p class="text-lg">Your votes have been recorded successfully!</p>
-              <p class="text-sm text-white/70 mt-3">You selected ${voteCount} couple${voteCount !== 1 ? "s" : ""}</p>
-            </div>
-          `;
-        }
-
-        if (votingForm) {
-          votingForm.classList.add("hidden");
-        }
-      }
-    }
-  });
-}
-
 async function loadCouples() {
   const couplesGrid = document.getElementById("couplesGrid");
   if (!couplesGrid) return;
