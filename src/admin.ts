@@ -322,10 +322,21 @@ async function loadCouples() {
       return;
     }
 
+    // Sort couples by order field
+    const couples = snapshot.docs
+      .map((doc) => ({
+        id: doc.id,
+        data: doc.data() as Couple,
+      }))
+      .sort((a, b) => {
+        const orderA = a.data.order ?? 9999;
+        const orderB = b.data.order ?? 9999;
+        return orderA - orderB;
+      });
+
     couplesList.innerHTML = "";
-    snapshot.forEach((docSnapshot) => {
-      const couple = docSnapshot.data() as Couple;
-      const coupleCard = createCoupleCard(docSnapshot.id, couple);
+    couples.forEach(({ id, data }) => {
+      const coupleCard = createCoupleCard(id, data);
       couplesList.appendChild(coupleCard);
     });
   } catch (error) {
