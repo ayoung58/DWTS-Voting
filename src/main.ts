@@ -19,6 +19,7 @@ console.log("🪩 DWTS Voting App - Audience Page Loaded");
 const voteSelections: { [coupleId: string]: "yes" | "no" | null } = {};
 let maxHearts: number | null = null; // null means unlimited
 let userFingerprint: string | null = null;
+let submissionStatus: string = "closed"; // Track submission status
 
 async function loadMaxHearts(): Promise<void> {
   try {
@@ -28,6 +29,7 @@ async function loadMaxHearts(): Promise<void> {
     if (statusDoc.exists()) {
       const data = statusDoc.data();
       maxHearts = data.maxHearts ?? null; // null if not set (unlimited)
+      submissionStatus = data.submissionStatus || "closed";
     }
   } catch (error) {
     console.error("Error loading max hearts:", error);
@@ -56,7 +58,13 @@ function startVotingStatusListener() {
 
   onSnapshot(statusDocRef, (docSnapshot) => {
     if (docSnapshot.exists()) {
-      const status = docSnapshot.data().status;
+      const data = docSnapshot.data();
+      const status = data.status;
+      const newSubmissionStatus = data.submissionStatus || "closed";
+
+      // Update submission status
+      submissionStatus = newSubmissionStatus;
+      updateSubmitButtonState();
 
       if (status === "closed") {
         // Voting was closed - show message and hide form
@@ -85,6 +93,32 @@ function startVotingStatusListener() {
       }
     }
   });
+}
+
+function updateSubmitButtonState() {
+  const submitBtn = document.getElementById(
+    "submitVotesBtn",
+  ) as HTMLButtonElement;
+  const helpText = document.getElementById("submitHelpText");
+
+  if (!submitBtn) return;
+
+  if (submissionStatus === "open") {
+    submitBtn.disabled = false;
+    submitBtn.classList.remove("opacity-50", "cursor-not-allowed");
+    submitBtn.textContent = "Submit All Votes";
+    if (helpText) {
+      helpText.textContent = "Click to submit your votes when ready";
+    }
+  } else {
+    submitBtn.disabled = true;
+    submitBtn.classList.add("opacity-50", "cursor-not-allowed");
+    submitBtn.textContent = "Submissions will open after all dances";
+    if (helpText) {
+      helpText.textContent =
+        "The submit button will be enabled after all dances are finished";
+    }
+  }
 }
 
 async function loadCouples() {
@@ -405,6 +439,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Load couples (this creates the UI)
   await loadCouples();
+
+  // Update submit button based on submission status
+  updateSubmitButtonState();
 
   // Start real-time voting status listener
   startVotingStatusListener();
