@@ -17,6 +17,53 @@ import type { Couple } from "./types";
 
 console.log("🪩 DWTS Admin Dashboard Loaded");
 
+// ===== AUTHENTICATION =====
+
+const ADMIN_CREDENTIALS = {
+  username: "yalvin",
+  password: "TestPassword123!",
+};
+
+const AUTH_SESSION_KEY = "dwts_admin_authenticated";
+
+function checkAuthentication(): boolean {
+  const isAuthenticated = sessionStorage.getItem(AUTH_SESSION_KEY) === "true";
+  return isAuthenticated;
+}
+
+function login(username: string, password: string): boolean {
+  if (
+    username === ADMIN_CREDENTIALS.username &&
+    password === ADMIN_CREDENTIALS.password
+  ) {
+    sessionStorage.setItem(AUTH_SESSION_KEY, "true");
+    return true;
+  }
+  return false;
+}
+
+function logout() {
+  sessionStorage.removeItem(AUTH_SESSION_KEY);
+  showLoginScreen();
+}
+
+function showLoginScreen() {
+  const loginScreen = document.getElementById("loginScreen");
+  const mainDashboard = document.getElementById("mainDashboard");
+  if (loginScreen) loginScreen.classList.remove("hidden");
+  if (mainDashboard) mainDashboard.classList.add("hidden");
+}
+
+function showMainDashboard() {
+  const loginScreen = document.getElementById("loginScreen");
+  const mainDashboard = document.getElementById("mainDashboard");
+  if (loginScreen) loginScreen.classList.add("hidden");
+  if (mainDashboard) mainDashboard.classList.remove("hidden");
+}
+
+// Make functions available globally
+(window as any).logout = logout;
+
 // Tab switching functionality
 function showTab(tabName: string) {
   // Hide all content
@@ -709,10 +756,21 @@ async function loadJudgeScores() {
       return;
     }
 
+    // Sort couples by order field (same as voting page display order)
+    const couples = snapshot.docs
+      .map((doc) => ({
+        id: doc.id,
+        data: doc.data() as Couple,
+      }))
+      .sort((a, b) => {
+        const orderA = a.data.order ?? 9999;
+        const orderB = b.data.order ?? 9999;
+        return orderA - orderB;
+      });
+
     scoresList.innerHTML = "";
-    snapshot.forEach((docSnapshot) => {
-      const couple = docSnapshot.data() as Couple;
-      const scoreCard = createScoreCard(docSnapshot.id, couple);
+    couples.forEach(({ id, data }) => {
+      const scoreCard = createScoreCard(id, data);
       scoresList.appendChild(scoreCard);
     });
   } catch (error) {
@@ -1568,6 +1626,55 @@ function refreshStatistics() {
 // Initialize on page load
 document.addEventListener("DOMContentLoaded", () => {
   console.log("Admin dashboard ready!");
+
+  // ===== AUTHENTICATION CHECK =====
+  // Check if user is authenticated
+  if (!checkAuthentication()) {
+    showLoginScreen();
+  } else {
+    showMainDashboard();
+  }
+
+  // Handle login form submission
+  const loginForm = document.getElementById("loginForm") as HTMLFormElement;
+  if (loginForm) {
+    loginForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const usernameInput = document.getElementById(
+        "username",
+      ) as HTMLInputElement;
+      const passwordInput = document.getElementById(
+        "password",
+      ) as HTMLInputElement;
+      const loginError = document.getElementById("loginError");
+
+      const username = usernameInput.value.trim();
+      const password = passwordInput.value;
+
+      if (login(username, password)) {
+        // Login successful
+        showMainDashboard();
+        // Clear form
+        loginForm.reset();
+        if (loginError) loginError.classList.add("hidden");
+
+        // Initialize dashboard after login
+        startDashboardListener();
+        loadCouples();
+      } else {
+        // Login failed
+        if (loginError) loginError.classList.remove("hidden");
+        passwordInput.value = "";
+        passwordInput.focus();
+      }
+    });
+  }
+
+  // Handle logout button
+  const logoutBtn = document.getElementById("logoutBtn");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", logout);
+  }
 
   // Start dashboard listener (default tab)
   startDashboardListener();

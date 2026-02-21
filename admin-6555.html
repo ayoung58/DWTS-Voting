@@ -12,11 +12,66 @@
     />
   </head>
   <body class="gradient-bg min-h-screen text-white font-body">
+    <!-- Login Screen -->
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center px-4">
+      <div class="bg-black/40 backdrop-blur-sm rounded-2xl p-8 max-w-md w-full border-2 border-gold-bright/50 shadow-2xl">
+        <div class="text-center mb-8">
+          <h1 class="text-gold-bright font-display text-4xl mb-2">🪩 Admin Login</h1>
+          <p class="text-white/80">DWTS Competition Management</p>
+        </div>
+        
+        <form id="loginForm" class="space-y-6">
+          <div>
+            <label for="username" class="block text-sm font-medium mb-2 text-white/90">Username</label>
+            <input
+              type="text"
+              id="username"
+              required
+              autocomplete="username"
+              class="w-full px-4 py-3 bg-white/10 border border-gold-bright/30 rounded-lg focus:outline-none focus:border-gold-bright text-white"
+              placeholder="Enter username"
+            />
+          </div>
+          
+          <div>
+            <label for="password" class="block text-sm font-medium mb-2 text-white/90">Password</label>
+            <input
+              type="password"
+              id="password"
+              required
+              autocomplete="current-password"
+              class="w-full px-4 py-3 bg-white/10 border border-gold-bright/30 rounded-lg focus:outline-none focus:border-gold-bright text-white"
+              placeholder="Enter password"
+            />
+          </div>
+          
+          <div id="loginError" class="hidden bg-red-600/20 border border-red-600/50 rounded-lg p-3 text-red-200 text-sm">
+            Invalid username or password
+          </div>
+          
+          <button
+            type="submit"
+            class="w-full bg-gradient-to-r from-gold-dark to-gold-bright text-purple-dark font-bold py-3 px-6 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg"
+          >
+            Login
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Main Dashboard (hidden until logged in) -->
+    <div id="mainDashboard" class="hidden">
     <div class="bg-black/30 py-6 text-center border-b-4 border-gold-bright">
       <h1 class="text-gold-bright font-display text-4xl md:text-5xl mb-2">
         🪩 Admin Dashboard - Dancing With The (UBC Dance Club) Stars 🪩
       </h1>
       <p class="text-lg">Competition Management System</p>
+      <button
+        id="logoutBtn"
+        class="mt-4 px-4 py-2 bg-red-600/80 text-white text-sm rounded-lg hover:bg-red-700 transition-all"
+      >
+        Logout
+      </button>
     </div>
 
     <div class="container mx-auto px-4 py-8 max-w-7xl">
@@ -511,6 +566,7 @@
         </div>
       </div>
     </div>
+    </div> <!-- End of mainDashboard -->
 
     <!-- Confetti library for presentation mode -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
