@@ -95,6 +95,69 @@ function startVotingStatusListener() {
   });
 }
 
+function updateSubmitButtonState() {
+  const submitBtn = document.getElementById(
+    "submitVotesBtn",
+  ) as HTMLButtonElement;
+  const helpText = document.getElementById("submitHelpText");
+
+  if (!submitBtn) return;
+
+  if (submissionStatus === "open") {
+    submitBtn.disabled = false;
+    submitBtn.classList.remove("opacity-50", "cursor-not-allowed");
+    submitBtn.textContent = "Submit All Votes";
+    if (helpText) {
+      helpText.textContent = "Click to submit your votes when ready";
+    }
+  } else {
+    submitBtn.disabled = true;
+    submitBtn.classList.add("opacity-50", "cursor-not-allowed");
+    submitBtn.textContent = "Submissions will open after all dances";
+    if (helpText) {
+      helpText.textContent =
+        "The submit button will be enabled after all dances are finished";
+    }
+  }
+}
+
+function startVoteDocumentListener() {
+  if (!userFingerprint) return;
+
+  const voteDocRef = doc(
+    db,
+    `competitions/${COMPETITION_ID}/votes`,
+    userFingerprint,
+  );
+
+  onSnapshot(voteDocRef, (docSnapshot) => {
+    if (docSnapshot.exists()) {
+      const data = docSnapshot.data();
+
+      // If the vote was just submitted (by user or auto-submitted by admin)
+      if (data.submitted) {
+        const voteCount = Object.keys(data.votes || {}).length;
+        const statusMessage = document.getElementById("statusMessage");
+        const votingForm = document.getElementById("votingForm");
+
+        if (statusMessage) {
+          statusMessage.innerHTML = `
+            <div class="card text-center py-8 bg-green-500/20 border-green-500/50">
+              <h2 class="text-3xl font-bold text-green-400 mb-2">✅ Votes Submitted!</h2>
+              <p class="text-lg">Your votes have been recorded successfully!</p>
+              <p class="text-sm text-white/70 mt-3">You selected ${voteCount} couple${voteCount !== 1 ? "s" : ""}</p>
+            </div>
+          `;
+        }
+
+        if (votingForm) {
+          votingForm.classList.add("hidden");
+        }
+      }
+    }
+  });
+}
+
 async function loadCouples() {
   const couplesGrid = document.getElementById("couplesGrid");
   if (!couplesGrid) return;
@@ -315,6 +378,57 @@ async function saveVotes() {
   }
 }
 
+// Load existing pending selections from database
+async function loadExistingSelections(): Promise<void> {
+  if (!userFingerprint) return;
+
+  try {
+    const voteDocRef = doc(
+      db,
+      `competitions/${COMPETITION_ID}/votes`,
+      userFingerprint,
+    );
+    const existingDoc = await getDoc(voteDocRef);
+
+    if (existingDoc.exists()) {
+      const data = existingDoc.data();
+
+      // Don't load if already submitted
+      if (data.submitted) return;
+
+      // Restore selections to voteSelections object
+      const votes = data.votes || {};
+      Object.entries(votes).forEach(([coupleId, vote]) => {
+        if (vote === "yes") {
+          voteSelections[coupleId] = "yes";
+        }
+      });
+
+      console.log("📥 Loaded existing selections:", Object.keys(votes).length);
+    }
+  } catch (error) {
+    console.error("Error loading existing selections:", error);
+  }
+}
+
+// Restore UI state for loaded selections (call after loadCouples)
+function restoreSelectionUI(): void {
+  Object.entries(voteSelections).forEach(([coupleId, selection]) => {
+    if (selection === "yes") {
+      const heartBtn = document.getElementById(`heart-${coupleId}`);
+      const heartIcon = document.getElementById(`heart-icon-${coupleId}`);
+      const heartText = document.getElementById(`heart-text-${coupleId}`);
+
+      if (heartBtn) {
+        heartBtn.classList.add("bg-pink-500", "border-pink-500");
+        heartBtn.classList.remove("bg-white/5", "border-pink-500/30");
+      }
+      if (heartIcon) heartIcon.textContent = "❤️";
+      if (heartText) heartText.textContent = "Selected!";
+    }
+  });
+}
+
 // Check if user already submitted votes
 async function checkExistingSubmission(): Promise<boolean> {
   if (!userFingerprint) return false;
@@ -451,11 +565,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     return; // Don't show voting form if already submitted
   }
 
+  // Load existing pending selections from database (before creating UI)
+  await loadExistingSelections();
+
   // Start listening for vote document changes (to detect auto-submission)
   startVoteDocumentListener();
 
   // Load couples (this creates the UI)
   await loadCouples();
+
+  // Restore UI state for any previously saved selections
+  restoreSelectionUI();
 
   // Update submit button based on submission status
   updateSubmitButtonState();

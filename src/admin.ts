@@ -325,9 +325,10 @@ async function autoSubmitPendingVotes() {
       if (data.submitted) return;
 
       const votes = data.votes || {};
-      const hasVotes = Object.keys(votes).length > 0;
+      // Check for actual yes selections (not just any keys)
+      const hasSelections = Object.values(votes).some((v) => v === "yes");
 
-      if (hasVotes) {
+      if (hasSelections) {
         // Has selections - mark as submitted
         await updateDoc(voteDoc.ref, {
           submitted: true,
@@ -1264,15 +1265,24 @@ async function loadPresentationData() {
     const votesRef = collection(db, `competitions/${COMPETITION_ID}/votes`);
     const votesSnapshot = await getDocs(votesRef);
 
-    // Count total submitted voters (not individual votes)
-    const totalSubmittedVoters = votesSnapshot.size;
+    // Count total submitted voters with at least one selection (not empty submissions)
+    let totalSubmittedVoters = 0;
 
     // Count yes votes per couple
     const voteCounts: { [coupleId: string]: number } = {};
 
     votesSnapshot.forEach((voteDoc) => {
       const voteData = voteDoc.data();
+
+      // Only count submitted votes with at least one selection
+      if (!voteData.submitted) return;
+
       const votes = voteData.votes || {};
+      const hasSelections = Object.values(votes).some((v) => v === "yes");
+      if (!hasSelections) return;
+
+      // Count this voter
+      totalSubmittedVoters++;
 
       Object.entries(votes).forEach(([coupleId, vote]) => {
         if (!voteCounts[coupleId]) {
@@ -1647,15 +1657,24 @@ async function loadStatistics() {
     const votesRef = collection(db, `competitions/${COMPETITION_ID}/votes`);
     const votesSnapshot = await getDocs(votesRef);
 
-    // Count total submitted voters (not individual votes)
-    const totalSubmittedVoters = votesSnapshot.size;
+    // Count total submitted voters with at least one selection (not empty submissions)
+    let totalSubmittedVoters = 0;
 
     // Count yes votes per couple
     const voteCounts: { [coupleId: string]: number } = {};
 
     votesSnapshot.forEach((voteDoc) => {
       const voteData = voteDoc.data();
+
+      // Only count submitted votes with at least one selection
+      if (!voteData.submitted) return;
+
       const votes = voteData.votes || {};
+      const hasSelections = Object.values(votes).some((v) => v === "yes");
+      if (!hasSelections) return;
+
+      // Count this voter
+      totalSubmittedVoters++;
 
       Object.entries(votes).forEach(([coupleId, vote]) => {
         if (!voteCounts[coupleId]) {
