@@ -10,9 +10,9 @@
       href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Montserrat:wght@300;400;600&display=swap"
       rel="stylesheet"
     />
-    <script type="module" crossorigin src="/assets/main-WIQWb5OI.js"></script>
-    <link rel="modulepreload" crossorigin href="/assets/utils-DSZfdBfr.js">
-    <link rel="stylesheet" crossorigin href="/assets/utils-9KDuKUMm.css">
+    <script type="module" crossorigin src="/assets/main-BPuhXN6m.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/utils-BtKUMR5s.js">
+    <link rel="stylesheet" crossorigin href="/assets/utils-C7kHM5sD.css">
   </head>
   <body class="gradient-bg min-h-screen text-white font-body">
     <div class="container mx-auto px-4 py-8 max-w-7xl">
@@ -42,7 +42,7 @@
         </div>
 
         <!-- Auto-save info -->
-        <div class="text-center">
+        <div class="text-center my-6">
           <p class="text-sm text-white/50">
             🪩 Your votes are saved automatically. You can change your
             selections anytime while voting is open.
@@ -55,6 +55,19 @@
           class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8"
         >
           <!-- Couples will be loaded here -->
+        </div>
+
+        <!-- Submit Button -->
+        <div class="text-center">
+          <button
+            id="submitVotesBtn"
+            class="btn-primary text-lg px-12 py-4 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Submit All Votes
+          </button>
+          <p class="text-sm text-white/70 mt-3">
+            Click to submit your votes when ready
+          </p>
         </div>
       </div>
     </div>

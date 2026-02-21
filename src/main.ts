@@ -325,6 +325,61 @@ function applyRestoredVotesToUI() {
   });
 }
 
+// Submit votes with confirmation
+async function submitVotes() {
+  // Check if at least one vote was cast
+  const voteCount = Object.values(voteSelections).filter(
+    (v) => v === "yes",
+  ).length;
+
+  if (voteCount === 0) {
+    alert("Please select at least one couple before submitting!");
+    return;
+  }
+
+  const submitBtn = document.getElementById(
+    "submitVotesBtn",
+  ) as HTMLButtonElement;
+
+  if (!submitBtn) return;
+
+  // Disable button to prevent double submission
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Submitting...";
+
+  try {
+    // Ensure votes are saved
+    await autoSaveVotes();
+
+    // Show success message
+    const votingForm = document.getElementById("votingForm");
+    const statusMessage = document.getElementById("statusMessage");
+
+    if (statusMessage) {
+      statusMessage.innerHTML = `
+        <div class="card text-center py-8 bg-green-500/20 border-green-500/50">
+          <h2 class="text-3xl font-bold text-green-400 mb-2">✅ Thank You!</h2>
+          <p class="text-lg">Your votes have been submitted successfully!</p>
+          <p class="text-sm text-white/70 mt-3">You selected ${voteCount} couple${voteCount !== 1 ? "s" : ""}</p>
+        </div>
+      `;
+    }
+
+    if (votingForm) {
+      votingForm.classList.add("hidden");
+    }
+
+    console.log("✅ Votes submitted successfully");
+  } catch (error) {
+    console.error("Error submitting votes:", error);
+    alert("Failed to submit votes. Please try again.");
+
+    // Re-enable button on error
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Submit All Votes";
+  }
+}
+
 // Make toggleHeart function available globally
 (window as any).toggleHeart = toggleHeart;
 
@@ -367,4 +422,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Start real-time voting status listener
   startVotingStatusListener();
+
+  // Handle submit button
+  const submitBtn = document.getElementById("submitVotesBtn");
+  if (submitBtn) {
+    submitBtn.addEventListener("click", submitVotes);
+  }
 });
