@@ -1147,9 +1147,11 @@ async function loadPresentationData() {
     const votesRef = collection(db, `competitions/${COMPETITION_ID}/votes`);
     const votesSnapshot = await getDocs(votesRef);
 
-    // Count votes per couple
-    const voteCounts: { [coupleId: string]: { yes: number; total: number } } =
-      {};
+    // Count total submitted voters (not individual votes)
+    const totalSubmittedVoters = votesSnapshot.size;
+
+    // Count yes votes per couple
+    const voteCounts: { [coupleId: string]: number } = {};
 
     votesSnapshot.forEach((voteDoc) => {
       const voteData = voteDoc.data();
@@ -1157,11 +1159,10 @@ async function loadPresentationData() {
 
       Object.entries(votes).forEach(([coupleId, vote]) => {
         if (!voteCounts[coupleId]) {
-          voteCounts[coupleId] = { yes: 0, total: 0 };
+          voteCounts[coupleId] = 0;
         }
-        voteCounts[coupleId].total++;
         if (vote === "yes") {
-          voteCounts[coupleId].yes++;
+          voteCounts[coupleId]++;
         }
       });
     });
@@ -1171,12 +1172,15 @@ async function loadPresentationData() {
     couplesSnapshot.forEach((coupleDoc) => {
       const coupleData = coupleDoc.data();
       const coupleId = coupleDoc.id;
-      const votes = voteCounts[coupleId] || { yes: 0, total: 0 };
+      const yesVotes = voteCounts[coupleId] || 0;
 
       const judgeScoreNormalized = normalizeJudgeScore(
         coupleData.judgeScore || 0,
       );
-      const audienceScore = calculateAudienceScore(votes.yes, votes.total);
+      const audienceScore = calculateAudienceScore(
+        yesVotes,
+        totalSubmittedVoters,
+      );
       const finalScore = calculateFinalScore(
         audienceScore,
         judgeScoreNormalized,
@@ -1195,8 +1199,8 @@ async function loadPresentationData() {
         judgeScore: judgeScoreNormalized,
         audienceScore: audienceScore,
         finalScore: finalScore,
-        yesVotes: votes.yes,
-        totalVotes: votes.total,
+        yesVotes: yesVotes,
+        totalVotes: totalSubmittedVoters,
         audienceRevealed: false,
         judgesRevealed: false,
       });
@@ -1530,9 +1534,11 @@ async function loadStatistics() {
     const votesRef = collection(db, `competitions/${COMPETITION_ID}/votes`);
     const votesSnapshot = await getDocs(votesRef);
 
-    // Count votes per couple
-    const voteCounts: { [coupleId: string]: { yes: number; total: number } } =
-      {};
+    // Count total submitted voters (not individual votes)
+    const totalSubmittedVoters = votesSnapshot.size;
+
+    // Count yes votes per couple
+    const voteCounts: { [coupleId: string]: number } = {};
 
     votesSnapshot.forEach((voteDoc) => {
       const voteData = voteDoc.data();
@@ -1540,11 +1546,10 @@ async function loadStatistics() {
 
       Object.entries(votes).forEach(([coupleId, vote]) => {
         if (!voteCounts[coupleId]) {
-          voteCounts[coupleId] = { yes: 0, total: 0 };
+          voteCounts[coupleId] = 0;
         }
-        voteCounts[coupleId].total++;
         if (vote === "yes") {
-          voteCounts[coupleId].yes++;
+          voteCounts[coupleId]++;
         }
       });
     });
@@ -1562,12 +1567,15 @@ async function loadStatistics() {
     couplesSnapshot.forEach((coupleDoc) => {
       const coupleData = coupleDoc.data();
       const coupleId = coupleDoc.id;
-      const votes = voteCounts[coupleId] || { yes: 0, total: 0 };
+      const yesVotes = voteCounts[coupleId] || 0;
 
       const judgeScoreNormalized = normalizeJudgeScore(
         coupleData.judgeScore || 0,
       );
-      const audienceScore = calculateAudienceScore(votes.yes, votes.total);
+      const audienceScore = calculateAudienceScore(
+        yesVotes,
+        totalSubmittedVoters,
+      );
       const finalScore = calculateFinalScore(
         audienceScore,
         judgeScoreNormalized,
@@ -1578,8 +1586,8 @@ async function loadStatistics() {
         audienceScore,
         judgeScore: judgeScoreNormalized,
         finalScore,
-        yesVotes: votes.yes,
-        totalVotes: votes.total,
+        yesVotes: yesVotes,
+        totalVotes: totalSubmittedVoters,
       });
     });
 

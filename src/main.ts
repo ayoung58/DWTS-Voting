@@ -226,15 +226,12 @@ function toggleHeart(coupleId: string) {
       heartBtn.classList.remove("bg-white/5", "border-pink-500/30");
     }
     if (heartIcon) heartIcon.textContent = "❤️";
-    if (heartText) heartText.textContent = "Voted!";
+    if (heartText) heartText.textContent = "Selected!";
     console.log("Heart added:", coupleId);
   }
-
-  // Auto-save to Firestore
-  autoSaveVotes();
 }
 
-async function autoSaveVotes() {
+async function saveVotes() {
   if (!userFingerprint) return;
 
   const voteDocRef = doc(
@@ -260,16 +257,18 @@ async function autoSaveVotes() {
       timestamp: serverTimestamp(),
       fingerprint: userFingerprint,
       votes,
+      submitted: true, // Mark as officially submitted
     });
 
-    console.log("✅ Votes auto-saved");
+    console.log("✅ Votes submitted to database");
   } catch (error) {
-    console.error("Error auto-saving votes:", error);
+    console.error("Error saving votes:", error);
+    throw error;
   }
 }
 
-// Restore previously saved votes from Firestore
-async function restoreVotes(): Promise<boolean> {
+// Check if user already submitted votes
+async function checkExistingSubmission(): Promise<boolean> {
   if (!userFingerprint) return false;
 
   try {
@@ -282,47 +281,34 @@ async function restoreVotes(): Promise<boolean> {
 
     if (existingDoc.exists()) {
       const data = existingDoc.data();
-      const savedVotes = data.votes || {};
 
-      // Restore selections
-      Object.entries(savedVotes).forEach(([coupleId, vote]) => {
-        if (vote === "yes") {
-          voteSelections[coupleId] = "yes";
+      // If already submitted, show message and hide form
+      if (data.submitted) {
+        const voteCount = Object.keys(data.votes || {}).length;
+        const statusMessage = document.getElementById("statusMessage");
+        const votingForm = document.getElementById("votingForm");
+
+        if (statusMessage) {
+          statusMessage.innerHTML = `
+            <div class="card text-center py-8 bg-green-500/20 border-green-500/50">
+              <h2 class="text-3xl font-bold text-green-400 mb-2">✅ Already Voted</h2>
+              <p class="text-lg">You have already submitted your votes!</p>
+              <p class="text-sm text-white/70 mt-3">You selected ${voteCount} couple${voteCount !== 1 ? "s" : ""}</p>
+            </div>
+          `;
         }
-      });
 
-      // Restore voter name
-      if (data.voterName && data.voterName !== "Anonymous") {
-        const voterNameInput = document.getElementById(
-          "voterName",
-        ) as HTMLInputElement;
-        if (voterNameInput) voterNameInput.value = data.voterName;
+        if (votingForm) {
+          votingForm.classList.add("hidden");
+        }
+
+        return true;
       }
-
-      return true;
     }
   } catch (error) {
-    console.error("Error restoring votes:", error);
+    console.error("Error checking existing submission:", error);
   }
   return false;
-}
-
-// Apply restored vote selections to the UI
-function applyRestoredVotesToUI() {
-  Object.entries(voteSelections).forEach(([coupleId, vote]) => {
-    if (vote === "yes") {
-      const heartBtn = document.getElementById(`heart-${coupleId}`);
-      const heartIcon = document.getElementById(`heart-icon-${coupleId}`);
-      const heartText = document.getElementById(`heart-text-${coupleId}`);
-
-      if (heartBtn) {
-        heartBtn.classList.add("bg-pink-500", "border-pink-500");
-        heartBtn.classList.remove("bg-white/5", "border-pink-500/30");
-      }
-      if (heartIcon) heartIcon.textContent = "❤️";
-      if (heartText) heartText.textContent = "Voted!";
-    }
-  });
 }
 
 // Submit votes with confirmation
@@ -348,8 +334,8 @@ async function submitVotes() {
   submitBtn.textContent = "Submitting...";
 
   try {
-    // Ensure votes are saved
-    await autoSaveVotes();
+    // Save votes to database
+    await saveVotes();
 
     // Show success message
     const votingForm = document.getElementById("votingForm");
@@ -411,14 +397,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Load max hearts setting
   await loadMaxHearts();
 
-  // Restore previous votes from Firestore (if any)
-  await restoreVotes();
+  // Check if user already submitted
+  const alreadySubmitted = await checkExistingSubmission();
+  if (alreadySubmitted) {
+    return; // Don't show voting form if already submitted
+  }
 
   // Load couples (this creates the UI)
   await loadCouples();
-
-  // Apply restored vote state to the rendered UI
-  applyRestoredVotesToUI();
 
   // Start real-time voting status listener
   startVotingStatusListener();
