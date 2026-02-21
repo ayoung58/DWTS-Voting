@@ -10,9 +10,9 @@
       href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Montserrat:wght@300;400;600&display=swap"
       rel="stylesheet"
     />
-    <script type="module" crossorigin src="/assets/admin-D_APgzps.js"></script>
-    <link rel="modulepreload" crossorigin href="/assets/utils-C3A82O4d.js">
-    <link rel="stylesheet" crossorigin href="/assets/utils-DbZ3p3ed.css">
+    <script type="module" crossorigin src="/assets/admin-Drpap0bd.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/utils-CSdLursE.js">
+    <link rel="stylesheet" crossorigin href="/assets/utils-B3U_mPny.css">
   </head>
   <body class="gradient-bg min-h-screen text-white font-body">
     <!-- Login Screen -->
@@ -341,6 +341,36 @@
           <p class="text-sm text-white/70 mt-4 text-center">
             When voting is closed, audience members will see a "Voting Closed"
             message
+          </p>
+        </div>
+
+        <!-- Submission Controls -->
+        <div class="bg-white/5 rounded-lg p-6 mb-6">
+          <h3 class="text-xl font-semibold mb-4">📥 Submission Controls</h3>
+          <div class="mb-4">
+            <p class="text-lg mb-2">Current Submission Status:</p>
+            <p id="submissionStatusDisplay" class="text-2xl font-bold">
+              <span id="submissionStatusText" class="text-gold-bright">Loading...</span>
+            </p>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <button
+              id="openSubmissionBtn"
+              onclick="setSubmissionStatus('open')"
+              class="bg-gradient-to-r from-blue-600 to-blue-500 text-white font-bold py-4 px-6 rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              📥 Open Submissions
+            </button>
+            <button
+              id="closeSubmissionBtn"
+              onclick="setSubmissionStatus('closed')"
+              class="bg-gradient-to-r from-orange-600 to-orange-500 text-white font-bold py-4 px-6 rounded-lg hover:from-orange-700 hover:to-orange-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              🔒 Close Submissions & Auto-Submit
+            </button>
+          </div>
+          <p class="text-sm text-white/70 mt-4 text-center">
+            When submissions open, users can submit their votes. When closed, all pending votes with selections will be auto-submitted.
           </p>
         </div>
 

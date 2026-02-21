@@ -139,20 +139,24 @@ async function loadVotingStatus() {
 
     let currentStatus = "open"; // Default to open
     let maxHearts = null;
+    let submissionStatus = "closed"; // Default to closed
 
     if (statusDoc.exists()) {
       const data = statusDoc.data();
       currentStatus = data.status || "open";
       maxHearts = data.maxHearts ?? null;
+      submissionStatus = data.submissionStatus || "closed";
     } else {
       // Create initial status document if it doesn't exist
       await setDoc(doc(db, `competitions/${COMPETITION_ID}/status/current`), {
         status: "open",
+        submissionStatus: "closed",
         lastUpdated: new Date().toISOString(),
       });
     }
 
     updateVotingStatusUI(currentStatus);
+    updateSubmissionStatusUI(submissionStatus);
     updateMaxHeartsUI(maxHearts);
   } catch (error) {
     console.error("Error loading voting status:", error);
@@ -166,8 +170,11 @@ function startVotingStatusListener() {
 
   votingStatusUnsubscribe = onSnapshot(statusDocRef, (docSnapshot) => {
     if (docSnapshot.exists()) {
-      const status = docSnapshot.data().status || "open";
+      const data = docSnapshot.data();
+      const status = data.status || "open";
+      const submissionStatus = data.submissionStatus || "closed";
       updateVotingStatusUI(status);
+      updateSubmissionStatusUI(submissionStatus);
     }
   });
 }
@@ -238,6 +245,116 @@ async function setVotingStatus(status: "open" | "closed") {
 
 // Make function available globally for onclick handlers
 (window as any).setVotingStatus = setVotingStatus;
+
+// ===== SUBMISSION CONTROL =====
+
+function updateSubmissionStatusUI(status: string) {
+  const statusText = document.getElementById("submissionStatusText");
+  const openBtn = document.getElementById(
+    "openSubmissionBtn",
+  ) as HTMLButtonElement;
+  const closeBtn = document.getElementById(
+    "closeSubmissionBtn",
+  ) as HTMLButtonElement;
+
+  if (!statusText || !openBtn || !closeBtn) return;
+
+  if (status === "open") {
+    statusText.textContent = "OPEN";
+    statusText.className = "text-green-400";
+    openBtn.disabled = true;
+    closeBtn.disabled = false;
+  } else {
+    statusText.textContent = "CLOSED";
+    statusText.className = "text-red-400";
+    openBtn.disabled = false;
+    closeBtn.disabled = true;
+  }
+}
+
+async function setSubmissionStatus(status: "open" | "closed") {
+  try {
+    // If closing submissions, auto-submit all pending votes
+    if (status === "closed") {
+      const confirmed = confirm(
+        "⚠️ This will auto-submit all pending votes (with at least one selection).\n\nAre you sure you want to close submissions?",
+      );
+      if (!confirmed) return;
+
+      // Auto-submit pending votes
+      await autoSubmitPendingVotes();
+    }
+
+    // Fetch current status doc to preserve other fields
+    const statusDoc = await getDoc(
+      doc(db, `competitions/${COMPETITION_ID}/status/current`),
+    );
+    const existingData = statusDoc.exists() ? statusDoc.data() : {};
+
+    await setDoc(doc(db, `competitions/${COMPETITION_ID}/status/current`), {
+      ...existingData,
+      submissionStatus: status,
+      lastUpdated: new Date().toISOString(),
+    });
+
+    console.log(`Submission status set to: ${status}`);
+
+    const message =
+      status === "open"
+        ? "✅ Submissions are now OPEN! Users can submit their votes."
+        : "🔒 Submissions are now CLOSED. All pending votes have been auto-submitted.";
+    alert(message);
+  } catch (error) {
+    console.error("Error setting submission status:", error);
+    alert("Failed to update submission status. Check console for details.");
+  }
+}
+
+async function autoSubmitPendingVotes() {
+  try {
+    const votesRef = collection(db, `competitions/${COMPETITION_ID}/votes`);
+    const snapshot = await getDocs(votesRef);
+
+    let autoSubmittedCount = 0;
+    let deletedCount = 0;
+
+    const updatePromises = snapshot.docs.map(async (voteDoc) => {
+      const data = voteDoc.data();
+
+      // Skip if already submitted
+      if (data.submitted) return;
+
+      const votes = data.votes || {};
+      const hasVotes = Object.keys(votes).length > 0;
+
+      if (hasVotes) {
+        // Has selections - mark as submitted
+        await updateDoc(voteDoc.ref, {
+          submitted: true,
+          autoSubmitted: true,
+          submittedAt: new Date().toISOString(),
+        });
+        autoSubmittedCount++;
+      } else {
+        // No selections - delete this vote document
+        await deleteDoc(voteDoc.ref);
+        deletedCount++;
+      }
+    });
+
+    await Promise.all(updatePromises);
+
+    console.log(
+      `✅ Auto-submitted ${autoSubmittedCount} votes, deleted ${deletedCount} empty votes`,
+    );
+  } catch (error) {
+    console.error("Error auto-submitting pending votes:", error);
+    throw error;
+  }
+}
+
+// Make function available globally
+(window as any).setSubmissionStatus = setSubmissionStatus;
 
 // ===== MAX HEARTS LIMIT =====
 
@@ -1420,12 +1537,8 @@ function revealLdoc(position: number) {
     return;
   }
 
-  const { couple, rank } = ldocWinners[ldocIndex];
-  showCoupleReveal(
-    couple,
-    `🎉 LDOC Winner #${position}`,
-    `#${rank} Audience Favorite`,
-  );
+  const { couple } = ldocWinners[ldocIndex];
+  showCoupleReveal(couple, `🎉 LDOC Winner #${position}`);
 
   // Disable the button
   const btn = document.getElementById(

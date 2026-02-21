@@ -19,6 +19,7 @@ console.log("🪩 DWTS Voting App - Audience Page Loaded");
 const voteSelections: { [coupleId: string]: "yes" | "no" | null } = {};
 let maxHearts: number | null = null; // null means unlimited
 let userFingerprint: string | null = null;
+let submissionStatus: string = "closed"; // Track submission status
 
 async function loadMaxHearts(): Promise<void> {
   try {
@@ -28,6 +29,7 @@ async function loadMaxHearts(): Promise<void> {
     if (statusDoc.exists()) {
       const data = statusDoc.data();
       maxHearts = data.maxHearts ?? null; // null if not set (unlimited)
+      submissionStatus = data.submissionStatus || "closed";
     }
   } catch (error) {
     console.error("Error loading max hearts:", error);
@@ -56,7 +58,13 @@ function startVotingStatusListener() {
 
   onSnapshot(statusDocRef, (docSnapshot) => {
     if (docSnapshot.exists()) {
-      const status = docSnapshot.data().status;
+      const data = docSnapshot.data();
+      const status = data.status;
+      const newSubmissionStatus = data.submissionStatus || "closed";
+
+      // Update submission status
+      submissionStatus = newSubmissionStatus;
+      updateSubmitButtonState();
 
       if (status === "closed") {
         // Voting was closed - show message and hide form
@@ -81,6 +89,69 @@ function startVotingStatusListener() {
 
         if (submitBtn) {
           submitBtn.disabled = true;
+        }
+      }
+    }
+  });
+}
+
+function updateSubmitButtonState() {
+  const submitBtn = document.getElementById(
+    "submitVotesBtn",
+  ) as HTMLButtonElement;
+  const helpText = document.getElementById("submitHelpText");
+
+  if (!submitBtn) return;
+
+  if (submissionStatus === "open") {
+    submitBtn.disabled = false;
+    submitBtn.classList.remove("opacity-50", "cursor-not-allowed");
+    submitBtn.textContent = "Submit All Votes";
+    if (helpText) {
+      helpText.textContent = "Click to submit your votes when ready";
+    }
+  } else {
+    submitBtn.disabled = true;
+    submitBtn.classList.add("opacity-50", "cursor-not-allowed");
+    submitBtn.textContent = "Submissions will open after all dances";
+    if (helpText) {
+      helpText.textContent =
+        "The submit button will be enabled after all dances are finished";
+    }
+  }
+}
+
+function startVoteDocumentListener() {
+  if (!userFingerprint) return;
+
+  const voteDocRef = doc(
+    db,
+    `competitions/${COMPETITION_ID}/votes`,
+    userFingerprint,
+  );
+
+  onSnapshot(voteDocRef, (docSnapshot) => {
+    if (docSnapshot.exists()) {
+      const data = docSnapshot.data();
+
+      // If the vote was just submitted (by user or auto-submitted by admin)
+      if (data.submitted) {
+        const voteCount = Object.keys(data.votes || {}).length;
+        const statusMessage = document.getElementById("statusMessage");
+        const votingForm = document.getElementById("votingForm");
+
+        if (statusMessage) {
+          statusMessage.innerHTML = `
+            <div class="card text-center py-8 bg-green-500/20 border-green-500/50">
+              <h2 class="text-3xl font-bold text-green-400 mb-2">✅ Votes Submitted!</h2>
+              <p class="text-lg">Your votes have been recorded successfully!</p>
+              <p class="text-sm text-white/70 mt-3">You selected ${voteCount} couple${voteCount !== 1 ? "s" : ""}</p>
+            </div>
+          `;
+        }
+
+        if (votingForm) {
+          votingForm.classList.add("hidden");
         }
       }
     }
@@ -228,6 +299,46 @@ function toggleHeart(coupleId: string) {
     if (heartIcon) heartIcon.textContent = "❤️";
     if (heartText) heartText.textContent = "Selected!";
     console.log("Heart added:", coupleId);
+  }
+
+  // Auto-save selections to database (without submitted flag) so admin can auto-submit later
+  autoSaveSelections();
+}
+
+// Auto-save selections to the database without marking as submitted
+// This allows the admin to auto-submit pending votes when closing submissions
+async function autoSaveSelections() {
+  if (!userFingerprint) return;
+
+  const voteDocRef = doc(
+    db,
+    `competitions/${COMPETITION_ID}/votes`,
+    userFingerprint,
+  );
+
+  try {
+    const voterNameInput = document.getElementById(
+      "voterName",
+    ) as HTMLInputElement;
+    const voterName = voterNameInput?.value.trim() || "Anonymous";
+
+    const votes = Object.fromEntries(
+      Object.entries(voteSelections)
+        .filter(([_, v]) => v === "yes")
+        .map(([id]) => [id, "yes" as const]),
+    );
+
+    await setDoc(voteDocRef, {
+      voterName,
+      timestamp: serverTimestamp(),
+      fingerprint: userFingerprint,
+      votes,
+      submitted: false, // NOT submitted yet - pending
+    });
+
+    console.log("📝 Selections auto-saved (pending submission)");
+  } catch (error) {
+    console.error("Error auto-saving selections:", error);
   }
 }
 
@@ -403,8 +514,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     return; // Don't show voting form if already submitted
   }
 
+  // Start listening for vote document changes (to detect auto-submission)
+  startVoteDocumentListener();
+
   // Load couples (this creates the UI)
   await loadCouples();
+
+  // Update submit button based on submission status
+  updateSubmitButtonState();
 
   // Start real-time voting status listener
   startVotingStatusListener();
