@@ -65,6 +65,10 @@ function showTab(tabName: string) {
     loadPresentationData();
   }
 
+  if (tabName === "statistics") {
+    loadStatistics();
+  }
+
   if (tabName === "control") {
     startVotingStatusListener();
     loadVotingStatus();
@@ -1144,7 +1148,6 @@ async function loadPresentationData() {
     presentationCouples.sort((a, b) => b.finalScore - a.finalScore);
 
     generatePodiumView();
-    generateRevealControls();
   } catch (error) {
     console.error("Error loading presentation data:", error);
   }
@@ -1253,53 +1256,11 @@ function generatePodiumView() {
   }
 }
 
-function generateRevealControls() {
-  const controlsList = document.getElementById("revealControlsList");
-  if (!controlsList) return;
-
-  if (presentationCouples.length < 3) {
-    controlsList.innerHTML = `<p class="text-white/70">Need at least 3 couples for the podium reveal.</p>`;
-    return;
-  }
-
-  controlsList.innerHTML = `
-    <div class="space-y-4">
-      <p class="text-white/70 mb-4">Reveal the top 3 one at a time. Click each button when ready.</p>
-      <button 
-        id="reveal-3rd-btn"
-        class="w-full px-6 py-4 bg-amber-700 text-white rounded-lg hover:bg-amber-600 transition-all text-xl font-bold"
-        onclick="revealPlace('3rd')"
-      >
-        🥉 Reveal 3rd Place
-      </button>
-      <button 
-        id="reveal-2nd-btn"
-        class="w-full px-6 py-4 bg-gray-500 text-white rounded-lg hover:bg-gray-400 transition-all text-xl font-bold disabled:opacity-30 disabled:cursor-not-allowed"
-        onclick="revealPlace('2nd')"
-        disabled
-      >
-        🥈 Reveal 2nd Place
-      </button>
-      <button 
-        id="reveal-1st-btn"
-        class="w-full px-6 py-4 bg-gold-bright text-purple-dark rounded-lg hover:bg-gold-dark transition-all text-xl font-bold disabled:opacity-30 disabled:cursor-not-allowed"
-        onclick="revealPlace('1st')"
-        disabled
-      >
-        🥇 Reveal 1st Place
-      </button>
-    </div>
-  `;
-}
-
 function revealPlace(place: "3rd" | "2nd" | "1st") {
   const podiumDiv = document.getElementById(`podium-${place}`);
   const nameEl = document.getElementById(`podium-${place}-name`);
   const musicEl = document.getElementById(`podium-${place}-music`);
   const scoreEl = document.getElementById(`podium-${place}-score`);
-  const btn = document.getElementById(
-    `reveal-${place}-btn`,
-  ) as HTMLButtonElement;
 
   if (!podiumDiv) return;
 
@@ -1313,20 +1274,8 @@ function revealPlace(place: "3rd" | "2nd" | "1st") {
     if (scoreEl) scoreEl.style.opacity = "1";
   }, 1500);
 
-  // Disable current button and enable next
-  if (btn) {
-    btn.disabled = true;
-    btn.classList.add("opacity-50", "cursor-not-allowed");
-  }
-
-  if (place === "3rd") {
-    const next = document.getElementById("reveal-2nd-btn") as HTMLButtonElement;
-    if (next) next.disabled = false;
-  } else if (place === "2nd") {
-    const next = document.getElementById("reveal-1st-btn") as HTMLButtonElement;
-    if (next) next.disabled = false;
-  } else if (place === "1st") {
-    // All revealed — trigger confetti!
+  // Trigger confetti for 1st place
+  if (place === "1st") {
     triggerConfetti();
   }
 }
@@ -1365,8 +1314,256 @@ function triggerConfetti() {
   }
 }
 
+// ===== LDOC WINNERS FUNCTIONALITY =====
+
+interface LdocWinner {
+  couple: CoupleWithScores;
+  rank: number; // Rank by audience score only (1-based)
+}
+
+// Get LDOC winners - top 2 by audience score that are NOT in top 3 by final score
+function getLdocWinners(): LdocWinner[] {
+  if (presentationCouples.length < 5) return []; // Need at least 5 couples
+
+  // Get top 3 couple IDs by final score
+  const top3Ids = new Set(presentationCouples.slice(0, 3).map((c) => c.id));
+
+  // Sort all couples by audience score descending
+  const byAudienceScore = [...presentationCouples].sort(
+    (a, b) => b.audienceScore - a.audienceScore,
+  );
+
+  // Find couples with highest audience score NOT in top 3
+  const ldocWinners: LdocWinner[] = [];
+  let audienceRank = 0;
+
+  for (const couple of byAudienceScore) {
+    audienceRank++;
+    if (!top3Ids.has(couple.id)) {
+      ldocWinners.push({ couple, rank: audienceRank });
+      if (ldocWinners.length >= 2) break;
+    }
+  }
+
+  return ldocWinners;
+}
+
+// Reveal LDOC winner (1 or 2)
+function revealLdoc(position: number) {
+  const ldocWinners = getLdocWinners();
+  const ldocIndex = position - 1; // 0 or 1
+
+  if (ldocIndex >= ldocWinners.length) {
+    alert(`LDOC Winner #${position} not available (need at least 5 couples).`);
+    return;
+  }
+
+  const { couple, rank } = ldocWinners[ldocIndex];
+  showCoupleReveal(
+    couple,
+    `🎉 LDOC Winner #${position}`,
+    `#${rank} Audience Favorite`,
+  );
+
+  // Disable the button
+  const btn = document.getElementById(
+    `reveal-ldoc-${position}-btn`,
+  ) as HTMLButtonElement;
+  if (btn) {
+    btn.disabled = true;
+    btn.classList.add("opacity-50", "cursor-not-allowed");
+  }
+}
+
+// Reveal place in fullscreen mode
+function revealPlaceFullscreen(place: "3rd" | "2nd" | "1st") {
+  const placeIndex = place === "1st" ? 0 : place === "2nd" ? 1 : 2;
+  if (presentationCouples.length <= placeIndex) {
+    alert(`Not enough couples for ${place} place reveal.`);
+    return;
+  }
+
+  const couple = presentationCouples[placeIndex];
+  const emoji = place === "1st" ? "🥇" : place === "2nd" ? "🥈" : "🥉";
+  const title = `${emoji} ${place.charAt(0).toUpperCase() + place.slice(1)} Place`;
+
+  showCoupleReveal(couple, title);
+
+  // Also reveal on the podium
+  revealPlace(place);
+
+  // Disable the button
+  const btn = document.getElementById(
+    `reveal-${place}-fullscreen-btn`,
+  ) as HTMLButtonElement;
+  if (btn) {
+    btn.disabled = true;
+    btn.classList.add("opacity-50", "cursor-not-allowed");
+  }
+}
+
+// Show couple in fullscreen reveal overlay
+function showCoupleReveal(
+  couple: CoupleWithScores,
+  title: string,
+  subtitle?: string,
+) {
+  const overlay = document.getElementById("coupleRevealOverlay");
+  const content = document.getElementById("coupleRevealContent");
+
+  if (!overlay || !content) return;
+
+  const leadPhoto =
+    couple.leadPhoto ||
+    couple.headshot ||
+    "https://via.placeholder.com/200?text=Pro";
+  const followPhoto =
+    couple.followPhoto || "https://via.placeholder.com/200?text=Star";
+
+  content.innerHTML = `
+    <div class="animate-fade-in">
+      <h2 class="text-gold-bright text-4xl md:text-6xl font-bold mb-4 font-display">${title}</h2>
+      ${subtitle ? `<p class="text-white/70 text-xl mb-6">${subtitle}</p>` : ""}
+      <div class="flex gap-6 justify-center mb-6">
+        <div class="text-center">
+          <img src="${leadPhoto}" alt="${couple.leadName || "Pro"}" class="w-48 h-48 md:w-64 md:h-64 rounded-full object-cover border-4 border-gold-bright shadow-2xl" />
+          <p class="text-white/80 mt-3 text-lg">${couple.leadName || "Pro"}</p>
+        </div>
+        <div class="text-center">
+          <img src="${followPhoto}" alt="${couple.followName || "Star"}" class="w-48 h-48 md:w-64 md:h-64 rounded-full object-cover border-4 border-gold-bright shadow-2xl" />
+          <p class="text-white/80 mt-3 text-lg">${couple.followName || "Star"}</p>
+        </div>
+      </div>
+      <h3 class="text-gold-bright text-3xl md:text-5xl font-bold mb-4">${couple.name}</h3>
+      ${couple.music || couple.dance ? `<p class="text-white/60 text-xl mb-4">${couple.music || ""}${couple.music && couple.dance ? " — " : ""}${couple.dance || ""}</p>` : ""}
+    </div>
+  `;
+
+  overlay.classList.remove("hidden");
+  overlay.classList.add("flex");
+
+  // Play confetti for 1st place
+  if (title.includes("1st")) {
+    triggerConfetti();
+  }
+}
+
+// Close reveal overlay
+function closeRevealOverlay() {
+  const overlay = document.getElementById("coupleRevealOverlay");
+  if (overlay) {
+    overlay.classList.add("hidden");
+    overlay.classList.remove("flex");
+  }
+}
+
+// ===== STATISTICS TAB =====
+
+async function loadStatistics() {
+  const tableBody = document.getElementById("statisticsTableBody");
+  if (!tableBody) return;
+
+  try {
+    // Fetch couples
+    const couplesRef = collection(db, `competitions/${COMPETITION_ID}/couples`);
+    const couplesSnapshot = await getDocs(couplesRef);
+
+    // Fetch all votes
+    const votesRef = collection(db, `competitions/${COMPETITION_ID}/votes`);
+    const votesSnapshot = await getDocs(votesRef);
+
+    // Count votes per couple
+    const voteCounts: { [coupleId: string]: { yes: number; total: number } } =
+      {};
+
+    votesSnapshot.forEach((voteDoc) => {
+      const voteData = voteDoc.data();
+      const votes = voteData.votes || {};
+
+      Object.entries(votes).forEach(([coupleId, vote]) => {
+        if (!voteCounts[coupleId]) {
+          voteCounts[coupleId] = { yes: 0, total: 0 };
+        }
+        voteCounts[coupleId].total++;
+        if (vote === "yes") {
+          voteCounts[coupleId].yes++;
+        }
+      });
+    });
+
+    // Build statistics data
+    const stats: Array<{
+      name: string;
+      audienceScore: number;
+      judgeScore: number;
+      finalScore: number;
+      yesVotes: number;
+      totalVotes: number;
+    }> = [];
+
+    couplesSnapshot.forEach((coupleDoc) => {
+      const coupleData = coupleDoc.data();
+      const coupleId = coupleDoc.id;
+      const votes = voteCounts[coupleId] || { yes: 0, total: 0 };
+
+      const judgeScoreNormalized = normalizeJudgeScore(
+        coupleData.judgeScore || 0,
+      );
+      const audienceScore = calculateAudienceScore(votes.yes, votes.total);
+      const finalScore = calculateFinalScore(
+        audienceScore,
+        judgeScoreNormalized,
+      );
+
+      stats.push({
+        name: coupleData.name,
+        audienceScore,
+        judgeScore: judgeScoreNormalized,
+        finalScore,
+        yesVotes: votes.yes,
+        totalVotes: votes.total,
+      });
+    });
+
+    // Sort by final score descending
+    stats.sort((a, b) => b.finalScore - a.finalScore);
+
+    if (stats.length === 0) {
+      tableBody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-white/70">No couples found.</td></tr>`;
+      return;
+    }
+
+    tableBody.innerHTML = stats
+      .map(
+        (stat, index) => `
+      <tr class="border-b border-white/10 hover:bg-white/5">
+        <td class="px-4 py-3 font-bold text-gold-bright">${index + 1}</td>
+        <td class="px-4 py-3 font-semibold">${stat.name}</td>
+        <td class="px-4 py-3 text-right">${stat.audienceScore.toFixed(2)} / 50</td>
+        <td class="px-4 py-3 text-right">${stat.judgeScore.toFixed(2)} / 50</td>
+        <td class="px-4 py-3 text-right font-bold text-gold-bright">${stat.finalScore.toFixed(2)} / 100</td>
+        <td class="px-4 py-3 text-right text-green-400">${stat.yesVotes}</td>
+        <td class="px-4 py-3 text-right text-white/70">${stat.totalVotes}</td>
+      </tr>
+    `,
+      )
+      .join("");
+  } catch (error) {
+    console.error("Error loading statistics:", error);
+    tableBody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-red-400">Error loading statistics.</td></tr>`;
+  }
+}
+
+function refreshStatistics() {
+  loadStatistics();
+}
+
 // Make functions available globally
 (window as any).revealPlace = revealPlace;
+(window as any).revealLdoc = revealLdoc;
+(window as any).revealPlaceFullscreen = revealPlaceFullscreen;
+(window as any).closeRevealOverlay = closeRevealOverlay;
+(window as any).refreshStatistics = refreshStatistics;
 
 // Initialize on page load
 document.addEventListener("DOMContentLoaded", () => {
@@ -1457,5 +1654,11 @@ document.addEventListener("DOMContentLoaded", () => {
     exitFullscreenBtn.addEventListener("click", () => {
       presentationFullscreen.classList.add("hidden");
     });
+  }
+
+  // Close reveal overlay button
+  const closeRevealBtn = document.getElementById("closeRevealOverlay");
+  if (closeRevealBtn) {
+    closeRevealBtn.addEventListener("click", closeRevealOverlay);
   }
 });
