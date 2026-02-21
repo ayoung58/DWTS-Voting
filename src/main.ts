@@ -175,7 +175,7 @@ function createCoupleCard(
       </div>
     </div>
     <h3 class="text-lg sm:text-xl font-bold text-gold-bright my-3 text-center">${couple.name}</h3>
-    ${couple.music || couple.dance ? `<p class="text-xs text-white/50 text-center mb-2">${couple.music || ""}${couple.music && couple.dance ? " -- " : ""}${couple.dance || ""}</p>` : ""}
+    ${couple.music || couple.dance ? `<p class="text-sm font-semibold text-gold-bright text-center mb-2">${couple.music || ""}${couple.music && couple.dance ? " -- " : ""}${couple.dance || ""}</p>` : ""}
     
     <button 
       onclick="toggleHeart('${id}')"
